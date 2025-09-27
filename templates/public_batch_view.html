@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    .public-card {
+        background: linear-gradient(145deg, #1A0F3A, #22223b);
+        color: var(--text-color);
+        padding: 50px;
+        border-radius: 25px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
+        margin-top: 50px;
+    }
+    .public-card h2 {
+        color: var(--highlight-color);
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+    .public-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--secondary-text-clear);
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card public-card text-center">
+            <h5 class="card-title text-uppercase mb-3" style="color: var(--accent-color);">Course Information</h5>
+            <h2>{{ batch.name }}</h2>
+            <hr style="border-color: rgba(255, 255, 255, 0.1);">
+            <p>{{ batch.description or 'A detailed description of the course content will be provided soon.' }}</p>
+
+            <div class="mt-4">
+                <p>To access video content and enroll in this program, please:</p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-3">Login to Access</a>
+                <a href="{{ url_for('register') }}" class="btn btn-success btn-lg">Create Account</a>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('index') }}" class="small-muted"><i class="fas fa-arrow-left"></i> Back to All Courses</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

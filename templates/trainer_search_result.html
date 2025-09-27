@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3 class="mb-4">Trainer Search Result</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title" style="color: var(--accent-color);"><i class="fas fa-user-circle"></i> Trainer Profile</h5>
+            <div class="text-center mb-3">
+                {% if trainer.profile_pic %}
+                    <img src="{{ url_for('static', filename='profiles/' + trainer.profile_pic) }}" class="profile-img mx-auto" alt="Profile Picture">
+                {% else %}
+                    <i class="fas fa-user-circle fa-5x text-secondary mx-auto mb-3"></i>
+                {% endif %}
+                <p><strong>{{ trainer.name }}</strong></p>
+                <p class="small-muted">{{ trainer.email }}</p>
+            </div>
+            
+            <p><strong>Expertise:</strong> {{ trainer.expertise or 'Not specified' }}</p>
+            <p><strong>Phone:</strong> {{ trainer.phone or 'N/A' }}</p>
+            <p><strong>About:</strong> {{ trainer.about or 'No biography provided.' }}</p>
+            
+            <a href="{{ url_for('delete_trainer', trainer_id=trainer.id) }}" class="btn btn-danger mt-3" onclick="return confirm('Permanently delete this trainer? All assignments will be removed.')">Delete Trainer</a>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm">
+            <h5 class="card-title" style="color: var(--highlight-color);"><i class="fas fa-book-open"></i> Assigned Batches ({{ trainer.batches|length }})</h5>
+            <ul class="list-group list-group-flush mt-3">
+                {% for b in trainer.batches %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ b.name }}</strong><br>
+                        <small class="small-muted">{{ b.description or '' }}</small>
+                    </div>
+                    <a class="btn btn-sm btn-outline-info" href="{{ url_for('view_batch_enrollments', batch_id=b.id) }}">View Students</a>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">No batches currently assigned.</li>
+                {% endfor %}
+            </ul>
+            <a class="btn btn-secondary mt-3" href="{{ url_for('admin_dashboard') }}">Back to Management Panel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

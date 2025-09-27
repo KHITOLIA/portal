@@ -1,0 +1,135 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  body {
+    /* Existing background styles */
+    background: linear-gradient(rgba(47, 79, 79, 0.85), rgba(70, 130, 180, 0.85)), 
+      url("{{ url_for('static', filename='images/lms.jpeg') }}") no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  /* --- Container --- */
+  .login-container {
+    display: flex;
+    /* Updated background for better blend with dark theme */
+    background: rgba(30, 30, 60, 0.9); /* Darker, slightly transparent base */
+    border-radius: 20px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.6); /* Stronger shadow */
+    overflow: hidden;
+    width: 100%;
+    max-width: 900px;
+    min-height: 500px;
+    border: 1px solid rgba(138, 43, 226, 0.3); /* Subtle highlight border */
+  }
+
+  /* --- Left side (image) --- */
+  .login-left {
+    flex: 1;
+    background: url("{{ url_for('static', filename='images/tb.jpeg') }}") no-repeat center center;
+    background-size: cover;
+    position: relative;
+    opacity: 0.85;
+  }
+
+  /* --- Right side (form) - CRITICAL CHANGE --- */
+  .login-right {
+    flex: 1;
+    background: transparent; 
+    padding: 40px;
+    border-radius: 0 20px 20px 0;
+  }
+
+  .login-right h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    /* Retain shimmer effect for title */
+    background: linear-gradient(90deg,#ffd700, #ff5100, #ff3593);
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer 20s linear infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -300px 0; }
+    100% { background-position: 300px 0; }
+  }
+
+  /* Inputs - Changed background to dark/transparent and text to white */
+  .form-control {
+    border-radius: 12px;
+    border: 1px solid #5C3A9B; /* Highlight border */
+    background: rgba(255, 255, 255, 0.1); /* Light transparent background */
+    color: #fff; /* Ensure entered text is white */
+    padding: 14px;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.6) !important; /* Lighter placeholder */
+  }
+  .form-control:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    border-color: #A020F0;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Buttons */
+  .login-btn {
+    background: linear-gradient(45deg, #8A2BE2, #A020F0); /* Primary Gradient */
+    color: #fff;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+    border: none;
+    margin-top: 8px;
+  }
+  .login-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 5px 20px rgba(138, 43, 226, 0.6);
+  }
+
+  .register-btn {
+    background-color: transparent;
+    color: #00FFFF; /* Bright cyan color for link */
+    margin-top: 15px;
+    display: inline-block;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  .register-btn:hover {
+    color: #fff;
+    text-shadow: 0 0 5px #00FFFF;
+  }
+</style>
+
+<div class="login-container">
+  <div class="login-left"></div>
+  <div class="login-right">
+    <h4 style="color: #fff;">Create Account</h4>
+    <form method="post" action="{{ url_for('register') }}">
+      <input class="form-control" name="name" placeholder="Full Name" required>
+      <input class="form-control" name="email" placeholder="Email" type="email" required>
+      <input class="form-control" name="password" placeholder="Password" type="password" required>
+      <select class="form-control" name="role" required>
+        <option value="student" selected>Student</option>
+        {% if not admin_exists %}
+          <option value="admin">Admin</option>
+        {% endif %}
+      </select>
+      <button class="btn login-btn" type="submit">Register</button>
+    </form>
+    <a href="{{ url_for('login') }}" class="register-btn">Already registered? Login here</a>
+  </div>
+</div>
+{% endblock %}

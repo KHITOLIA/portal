@@ -1,0 +1,119 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    /* Stats Cards Section - High Visibility */
+    .stats-card {
+        background: #22223b;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        border: 2px solid transparent;
+        transition: transform 0.4s ease, border-color 0.4s ease;
+        height: 100%;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-8px) scale(1.03);
+        border-color: var(--highlight-color);
+        box-shadow: 0 15px 40px rgba(138, 43, 226, 0.4);
+    }
+    
+    .query-card {
+        border-color: var(--accent-color) !important;
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+
+    .stats-card h4 {
+        color: var(--accent-color); /* Gold/Yellow for numbers */
+        font-size: 3.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .stats-card p {
+        color: var(--text-color);
+        margin: 0;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    .action-link {
+        display: block;
+        text-align: center; 
+        margin-top: 2rem;
+    }
+</style>
+
+<h3 class="mb-5">Admin Dashboard</h3>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h4><i class="fas fa-user-graduate"></i> {{ students|length }}</h4>
+            <p>Total Students</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h4><i class="fas fa-book"></i> {{ batches|length }}</h4>
+            <p>Total Batches</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stats-card query-card">
+            <h4 style="color: #FF4500;">{{ pending_queries_count }}</h4>
+            <p style="color: #FFD700;"><i class="fas fa-headset"></i> Pending Queries</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <h4><i class="fas fa-chalkboard-teacher"></i> {{ trainers|length }}</h4>
+            <p>Total Trainers</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm alert-card">
+            <h5 class="card-title text-warning"><i class="fas fa-exclamation-triangle"></i> Unassigned Courses Alert</h5>
+            {% if unassigned_batches %}
+                <p class="text-warning">⚠️ {{ unassigned_batches|length }} batches need a trainer!</p>
+                <ul class="list-group list-group-flush" style="border: none;">
+                {% for b in unassigned_batches %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ b.name }}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline-warning">Assign Now</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-success">All active batches have assigned trainers. System is running smoothly!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm h-100" style="background: linear-gradient(135deg, #1a1529, #342d4a);">
+            <h5 class="card-title" style="color: #00FFFF;"><i class="fas fa-rocket"></i> Management Shortcuts</h5>
+            <div class="d-grid gap-3">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary p-3">
+                    <i class="fas fa-tasks"></i> Go to Management Panel 
+                </a>
+                <a href="{{ url_for('view_all_students') }}" class="btn btn-outline-info p-3">
+                    <i class="fas fa-user-graduate"></i> Manage Students & Progress
+                </a>
+                <a href="{{ url_for('view_all_trainers') }}" class="btn btn-outline-info p-3">
+                    <i class="fas fa-chalkboard-teacher"></i> Manage Trainers
+                </a>
+                <a href="{{ url_for('view_all_batches') }}" class="btn btn-outline-info p-3">
+                    <i class="fas fa-book"></i> View All Batches
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

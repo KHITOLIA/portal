@@ -1,0 +1,65 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3 class="mb-4">Trainer Profile</h3>
+
+<div class="card p-4 text-center mb-4">
+    <h5 class="card-title">Personal Details</h5>
+    {% if trainer.profile_pic %}
+        <img src="{{ url_for('static', filename='profiles/' + trainer.profile_pic) }}" class="profile-img mx-auto" alt="Profile Picture">
+    {% else %}
+        <i class="fas fa-user-circle fa-5x text-secondary mx-auto mb-3"></i>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Profile Picture</label>
+            <input type="file" class="form-control" name="profile_pic">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-control" name="name" value="{{ trainer.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Expertise</label>
+            <input type="text" class="form-control" name="expertise" value="{{ trainer.expertise or '' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input type="text" class="form-control" name="phone" value="{{ trainer.phone or '' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <input type="text" class="form-control" name="address" value="{{ trainer.address or '' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">About</label>
+            <textarea class="form-control" name="about" rows="4">{{ trainer.about or '' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Update Details</button>
+    </form>
+</div>
+
+<div class="card p-4">
+    <h5 class="card-title">Security Settings</h5>
+    <form method="post" action="{{ url_for('update_security') }}">
+        <div class="mb-3">
+            <label class="form-label">Current Email</label>
+            <input type="email" class="form-control" value="{{ trainer.email }}" disabled>
+        </div>
+        <hr class="text-secondary">
+        <div class="mb-3">
+            <label class="form-label">New Email Address</label>
+            <input type="email" class="form-control" name="new_email" placeholder="New Email (optional)" value="{{ trainer.email }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">New Password (Min 6 chars)</label>
+            <input type="password" class="form-control" name="new_password" placeholder="Leave blank to keep current password">
+        </div>
+        <hr class="text-secondary">
+        <div class="mb-3">
+            <label class="form-label text-warning">Verify Current Password (Required to save changes)</label>
+            <input type="password" class="form-control" name="current_password" required placeholder="Enter current password">
+        </div>
+        <button type="submit" class="btn btn-danger">Update Email & Password</button>
+    </form>
+</div>
+{% endblock %}

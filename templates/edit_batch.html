@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3 class="mb-4">Edit Batch: {{ batch.name }}</h3>
+<div class="card p-4">
+    <form method="post" action="{{ url_for('edit_batch', batch_id=batch.id) }}">
+        <div class="mb-3">
+            <label for="name" class="form-label">Batch Name</label>
+            <input class="form-control" name="name" value="{{ batch.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" name="description" rows="5">{{ batch.description }}</textarea>
+        </div>
+        <button class="btn btn-success w-100">Update Batch</button>
+        <a class="btn btn-outline-info w-100 mt-2" href="{{ url_for('admin_dashboard') }}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

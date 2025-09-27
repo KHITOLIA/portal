@@ -1,0 +1,182 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  /* --- Hero Section - Focused on Gradients and Shadows --- */
+  .hero-card {
+    background: linear-gradient(135deg, #A020F0 0%, #8A2BE2 100%); /* Violet Gradient */
+    color: #fff;
+    padding: 70px 30px;
+    border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 15px 50px rgba(138, 43, 226, 0.4); /* Stronger Aura Shadow */
+    animation: pulseHero 6s ease-in-out infinite;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    z-index: 0;    
+  }
+  .hero-card:hover {
+    transform: translateY(-15px) scale(1.04);
+    box-shadow: 0 25px 70px rgba(138, 43, 226, 0.6);
+  }
+  .hero-card h2 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    position: relative;
+    z-index: 2;
+  }
+  .hero-card p {
+    font-size: 1.3rem;
+    color: #e0e0ff;
+    margin-top: 15px;
+    position: relative;
+    z-index: 2;
+  }
+  @keyframes pulseHero {
+    0%,100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-5px) scale(1.01); }
+  }
+
+  /* --- Batch Card Structure and Trainer Display --- */
+  .batch-card {
+    background: linear-gradient(145deg, #0f4c75, #3282b8); /* Deep Blue/Cyan Gradient */
+    border-radius: 15px;
+    padding: 30px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    overflow: hidden;
+    min-height: 220px; /* Increased height to fit content */
+    border: 1px solid #00ffff; /* Neon cyan border for pop */
+  }
+  .batch-card:hover {
+    transform: translateY(-8px) scale(1.05); /* Increased scale on hover */
+    box-shadow: 0 20px 60px rgba(0, 255, 255, 0.5); /* Neon glow shadow */
+    z-index: 10;
+  }
+  
+  .batch-card h5 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: #FFFFFF;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  }
+
+  .batch-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .trainer-info {
+      display: flex;
+      align-items: center;
+      text-align: right;
+  }
+  .trainer-pic {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-left: 10px;
+      border: 3px solid var(--highlight-color); /* Violet border */
+  }
+  .trainer-name {
+      font-size: 0.95rem;
+      color: var(--secondary-text-clear);
+  }
+
+  /* Content Snippet Styling */
+  .batch-content-snippet {
+      color: #B3E5FC;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 4; /* Limit description to 4 lines */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 6rem; /* Ensures consistent card height */
+  }
+
+  .batch-col {
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .hero-card h2 { font-size: 2.5rem; }
+  }
+</style>
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="hero-card">
+        <h2>Welcome to Training Basket LMS</h2>
+        <p>Master your expertise with advanced, interactive learning modules and dedicated mentorship.</p>
+      </div>
+
+      {% if not current_user() %}
+      <div class="text-center mb-5">
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="{{ url_for('register') }}" class="btn btn-success btn-lg"><i class="fas fa-user-plus"></i> Register</a>
+      </div>
+      {% endif %}
+
+      <div class="row batch-container">
+        {% if batches %}
+          {% for b in batches %}
+          <div class="col-md-6 batch-col">
+              <div class="card batch-card" onclick="location.href='{{ url_for('view_batch', batch_id=b.id) }}'">
+                
+                <div class="batch-card-header">
+                    <div class="text-left">
+                        <h5 class="m-0">{{ b.name }}</h5>
+                    </div>
+                    <div class="trainer-info">
+                        <div class="text-right">
+                             <div class="trainer-name">Taught by:</div>
+                             <div class="trainer-name"><strong>{{ b.trainer.name if b.trainer else 'Unassigned' }}</strong></div>
+                        </div>
+                        {% if b.trainer and b.trainer.profile_pic %}
+                        <img src="{{ url_for('static', filename='profiles/' + b.trainer.profile_pic) }}" class="trainer-pic" alt="{{ b.trainer.name }}">
+                        {% else %}
+                        <i class="fas fa-user-circle fa-2x" style="color: var(--secondary-text-clear); margin-left: 10px;"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="batch-content-snippet">
+                    {{ b.description or 'Detailed course content and topics to be covered are available on the course page after registration.' }}
+                </div>
+                
+              </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-center text-light mt-4">No batches available yet. Admin will add them soon.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

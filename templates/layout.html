@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flask LMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            /* New Aura Gradient Dark Theme Variables */
+            --sidebar-width: 280px;
+            --main-bg-color: #0c0818; /* Deep Midnight Purple */
+            --card-bg-color: rgba(30, 20, 50, 0.7); /* Slightly Less Transparent Card Base */
+            --text-color: #e6e0ff;
+            --highlight-color: #8A2BE2; /* Blue Violet for main highlight */
+            --accent-color: #FFD700; /* Gold/Yellow for alerts/accents */
+            --secondary-bg-color: #1a1529;
+            --sidebar-gradient: linear-gradient(180deg, #1A0F3A, #0C0818);
+            --primary-text-bright: #FFFFFF; /* New: Bright text for main items */
+            --secondary-text-clear: #B0E0E6; /* New: Clear light blue for descriptions */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--main-bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Toggle button styling */
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px; 
+            z-index: 1001;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: left 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Main Content Wrapper */
+        .main-wrapper {
+            flex-grow: 1;
+            padding: 30px;
+            margin-left: 0; 
+            transition: margin-left 0.3s ease;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-gradient);
+            padding: 20px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+            position: fixed;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(-100%); 
+            transition: transform 0.3s ease;
+        }
+        
+        /* Opened state: overrides default closed state */
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-wrapper.open {
+            margin-left: var(--sidebar-width);
+        }
+        .sidebar-toggle-btn.open {
+            left: var(--sidebar-width);
+        }
+     
+        /* --- PUBLIC PAGE LAYOUT (No Sidebar) --- */
+        {% if not current_user() %}
+        .main-wrapper {
+            margin-left: 0 !important;
+            width: 100%;
+        }
+        {% endif %}
+
+        .sidebar-header {
+            text-align: center;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #5C3A9B;
+        }
+        .sidebar-header h4 {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            padding: 12px 20px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(138, 43, 226, 0.2);
+            color: var(--highlight-color);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+        .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        /* --- CARD STYLING (Glassmorphism & Aura) --- */
+        h3 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        .card {
+            background: var(--card-bg-color);
+            border: 1px solid rgba(138, 43, 226, 0.4); /* Highlight Border */
+            border-radius: 15px;
+            backdrop-filter: blur(8px); /* The Glass effect */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(138, 43, 226, 0.25); /* Aura Shadow */
+
+        }
+        .card-title {
+            color: var(--accent-color);
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+            font-weight: 600;
+        }
+        
+        /* --- LIST GROUP STYLING (For Admin/Student Tables) --- */
+        .list-group-item {
+            /* Generous padding for vertical space */
+            padding: 1.2rem 1rem !important; 
+            border-bottom: 1px solid #d6d8db !important;
+            background-color: transparent !important;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .list-group-item:hover {
+            background-color: rgba(222, 217, 228, 0.16) !important;
+        }
+        
+        .list-group-item strong, .list-group-item a {
+            color: white; /* Batch Names and primary links are bright */
+            font-weight: 600;
+        }
+
+        .small-muted, .list-group-item small {
+            color: white; /* Descriptions are clear blue */
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+        .list-group-item{
+            color: white;
+        }
+
+        /* --- FORM & INPUT STYLING --- */
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #5C3A9B;
+            padding: 0.75rem 1rem;
+            background-color: var(--secondary-bg-color);
+            color: rgb(50, 153, 131);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--highlight-color);
+            box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.4);
+            background-color: var(--secondary-bg-color);
+            color: rgb(164, 143, 8);
+        }
+         .form-label {
+            color: var(--primary-text-bright) !important;
+        }
+        
+        /* FIX: Placeholder Text Color */
+        .form-control::placeholder {
+            color: var(--placeholder-color) !important;
+            opacity: 1; /* Firefox fix */
+        }
+        /* --- BUTTON STYLING (Gradient & Interactive) --- */
+        .btn {
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 0.75rem 1.0rem; /* Reduced horizontal padding for fit */
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+        }
+        .btn-primary { background: linear-gradient(45deg, #8A2BE2, #A020F0); border: none; }
+        .btn-success { background: linear-gradient(45deg, #00FF7F, #3CB371); border: none; color: #1a1a2e;}
+
+        /* Outline button colors */
+        .btn-outline-warning { color: #777256; border-color: #FFD700; }
+        .btn-outline-warning:hover { background-color: #9f8711; color: #1a1a2e; }
+
+        .btn-outline-info { color: #cc7614; border-color: #00FFFF; }
+        .btn-outline-info:hover { background-color: #09796a; color: #1a1a2e; }
+        
+        .btn-outline-primary { color: #8A2BE2; border-color: #8A2BE2; }
+        .btn-outline-primary:hover { background-color: #8A2BE2; color: white; }
+
+        .btn-outline-danger { color: #67473b; border-color: #FF4500; }
+        .btn-outline-danger:hover { background-color: #a34320; color: white; }
+        
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #8e44ad;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    
+    {% if current_user() %}
+    <div class="sidebar" id="sidebar"> 
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Training Basket Logo">
+                    
+                <!-- <h4>Dashboard</h4> -->
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+                {% if current_user().role == 'admin' %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="fas fa-tasks"></i> Management Panel
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('profile') }}">
+                        <i class="fas fa-user-circle"></i> Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-auto">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="main-wrapper" id="main-content">
+        {% if current_user() %}
+            <button class="sidebar-toggle-btn" id="sidebar-toggle-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        {% endif %}
+        
+        <div class="container-fluid">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        
+        if (sidebarToggleBtn && sidebar) {
+            sidebarToggleBtn.addEventListener('click', () => {
+                // Toggle the 'open' class for all elements
+                sidebar.classList.toggle('open');
+                mainContent.classList.toggle('open');
+                sidebarToggleBtn.classList.toggle('open');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    /* Stats Cards Section */
+    .stats-card {
+        background: #22223b;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        border: 2px solid transparent;
+        transition: transform 0.4s ease, border-color 0.4s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-8px) scale(1.02) rotateX(5deg);
+        border-color: var(--highlight-color);
+    }
+
+    .stats-card h4 {
+        color: var(--accent-color); /* Yellow for numbers */
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+    }
+    .stats-card p {
+        color: var(--text-color);
+        margin: 0;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+    
+    /* --- BATCH LIST BUTTONS (Vertical Layout) --- */
+    .batch-actions {
+        /* Use flex column to stack buttons vertically */
+        display: flex;
+        flex-direction: column;
+        gap: 5px; /* Small space between buttons */
+        min-width: 120px; /* Ensures buttons have consistent width */
+    }
+    
+    /* List item spacing and contrast fix */
+    
+    /* CRITICAL FIX: Ensure the entire list container is transparent */
+    .list-group {
+        background: transparent !important; 
+    }
+
+    .list-group-item {
+        /* CRITICAL FIX: Ensure background is transparent by overriding Bootstrap/Layout defaults */
+        background-color: transparent !important; 
+        color: var(--primary-text-bright) !important; /* Ensure main list text is bright */
+        padding: 1.2rem 1rem !important; 
+        border-bottom: 1px solid #34495e !important;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .list-group-item:hover {
+        /* Keep subtle glow hover effect */
+        background-color: rgba(138, 43, 226, 0.1) !important;
+    }
+
+    .list-group-item strong {
+        color: var(--primary-text-bright);
+        font-weight: 600;
+        display: block; 
+        font-size: 1.05rem;
+    }
+
+    .list-group-item .small-muted {
+        color: var(--secondary-text-clear); 
+        font-size: 0.85rem;
+        font-weight: 400;
+    }
+
+    /* Override btn-sm padding for better vertical stacking look */
+    .batch-actions .btn {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+</style>
+
+<h3 class="mb-5" id="management-hub">Management Panel (CRUD Forms)</h3>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title"><i class="fas fa-plus-square"></i> Create Batch</h5>
+            <form method="post" action="{{ url_for('create_batch') }}">
+                <div class="mb-3">
+                    <input class="form-control" name="name" placeholder="Batch name" required>
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control" name="description" placeholder="Description" rows="3"></textarea>
+                </div>
+                <button class="btn btn-primary w-100">Create New Batch</button>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Add Trainer</h5>
+            <form method="post" action="{{ url_for('create_trainer') }}">
+                <div class="mb-3">
+                    <input class="form-control" name="name" placeholder="Trainer Name" required>
+                </div>
+                <div class="mb-3">
+                    <input class="form-control" type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="mb-3">
+                    <input class="form-control" name="expertise" placeholder="Expertise (e.g., Python, ML)">
+                </div>
+                <button class="btn btn-primary w-100">Add Trainer</button>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title"><i class="fas fa-user-tie"></i> Assign Trainer to Batch</h5>
+            <form method="post" action="{{ url_for('assign_trainer') }}">
+                <div class="mb-3">
+                    <select class="form-select" name="batch_id" required>
+                        <option value="">Select Batch</option>
+                        {% for b in batches %}
+                        <option value="{{ b.id }}">{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <select class="form-select" name="trainer_id" required>
+                        <option value="">Select Trainer</option>
+                        {% for t in trainers %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.expertise }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-success w-100">Assign Trainer</button>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title"><i class="fas fa-user-plus"></i> Enroll Student</h5>
+            <form method="post" action="{{ url_for('enroll_student') }}">
+                <div class="mb-3">
+                    <select class="form-select" name="user_id" required>
+                        <option value="">Select student</option>
+                        {% for u in students %}
+                        <option value="{{ u.id }}">{{ u.name }} ({{ u.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <select class="form-select" name="batch_id" required>
+                        <option value="">Select batch</option>
+                        {% for b in batches %}
+                        <option value="{{ b.id }}">{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-success w-100">Enroll</button>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm mb-4">
+            <h5 class="card-title"><i class="fas fa-search"></i> Search Student</h5>
+            <form method="get" action="{{ url_for('search_student_batches') }}">
+                <div class="input-group mb-3">
+                    <input class="form-control" name="query" placeholder="Student Email" required>
+                    <button class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card p-4 shadow-sm">
+            <h5 class="card-title"><i class="fas fa-search"></i> Search Trainer</h5>
+            <form method="get" action="{{ url_for('search_trainer') }}">
+                <div class="input-group mb-3">
+                    <input class="form-control" name="query" placeholder="Trainer Email" required>
+                    <button class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card p-4 shadow-sm">
+            <h5 class="card-title"><i class="fas fa-book-open"></i> All Batches</h5>
+            <ul class="list-group list-group-flush mt-3">
+                {% for b in batches %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div style="flex-grow: 1; padding-right: 15px;">
+                        <strong>{{ b.name }}</strong><br>
+                        <small class="small-muted">Trainer: {{ b.trainer.name if b.trainer else 'Unassigned' }}</small>
+                        <small class="small-muted d-block">{{ b.description or 'No description provided.' }}</small>
+                    </div>
+                    
+                    <div class="batch-actions">
+                        <a class="btn btn-sm btn-outline-warning" href="{{ url_for('edit_batch', batch_id=b.id) }}">Edit</a>
+                        <a class="btn btn-sm btn-outline-info" href="{{ url_for('view_batch_enrollments', batch_id=b.id) }}">Enrollments</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('view_batch', batch_id=b.id) }}">Open</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{{ url_for('delete_batch', batch_id=b.id) }}" onclick="return confirm('Delete batch? This will remove recordings and enrollments.')">Delete</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">No batches found. Create one!</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

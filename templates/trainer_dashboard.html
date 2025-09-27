@@ -1,0 +1,130 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: #fff;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        height: 100%;
+    }
+    .stats-card h4 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-card {
+        background: #22223b;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .profile-card img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--highlight-color);
+        margin-bottom: 10px;
+    }
+    .profile-card h5 {
+        color: var(--accent-color);
+        margin-bottom: 0;
+    }
+    .profile-card p {
+        color: var(--secondary-text-clear);
+        font-size: 0.9rem;
+    }
+    .query-item {
+        border-left: 5px solid #FF4500;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        background-color: rgba(255, 69, 0, 0.08) !important;
+        color: var(--primary-text-bright);
+    }
+    /* FIX 1: Spacing between buttons in the list */
+    .batch-actions {
+        display: flex;
+        gap: 10px; /* Added spacing */
+        min-width: 250px; 
+    }
+</style>
+<h3 class="mb-5">Trainer Dashboard</h3>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="profile-card h-100">
+            {% if trainer.profile_pic %}
+                <img src="{{ url_for('static', filename='profiles/' + trainer.profile_pic) }}" alt="Profile">
+            {% else %}
+                <i class="fas fa-user-circle fa-4x text-secondary mb-2"></i>
+            {% endif %}
+            <h5 class="mb-1">{{ trainer.name }}</h5>
+            <p class="mb-0">{{ trainer.expertise or 'General Mentor' }}</p>
+            <a href="{{ url_for('trainer_profile') }}" class="btn btn-sm btn-outline-info mt-2">Edit Profile</a>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="stats-card">
+            <h4>{{ batches|length }}</h4>
+            <p>Assigned Batches</p>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="stats-card">
+            <h4>{{ total_recordings_assigned }}</h4>
+            <p>Total Content Items</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm h-100">
+            <h5 class="card-title text-warning"><i class="fas fa-envelope-open-text"></i> Open Student Queries ({{ trainer_queries|length }})</h5>
+            <div class="list-group list-group-flush mt-3">
+                {% for query in trainer_queries %}
+                <div class="list-group-item query-item p-3">
+                    <p class="mb-1"><strong>From:</strong> {{ query.user.name }} ({{ query.batch.name if query.batch else 'General' }})</p>
+                    <p class="small-muted mb-0">{{ query.message }}</p>
+                    <small class="text-white-50 float-end">{{ query.created_at.strftime('%b %d, %I:%M %p') }}</small>
+                </div>
+                {% else %}
+                <li class="list-group-item text-center text-muted">No open queries for your assigned batches.</li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm h-100">
+            <h5 class="card-title">My Assigned Batches (Action Required)</h5>
+            <div class="list-group list-group-flush mt-3">
+                {% for b in batches %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ b.name }}</strong><br>
+                        <small class="small-muted">{{ b.description or 'No description provided.' }}</small>
+                    </div>
+                    <div class="batch-actions">
+                         <a href="{{ url_for('view_batch', batch_id=b.id) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-upload"></i> Manage Content
+                        </a>
+                        <a href="{{ url_for('view_batch_enrollments', batch_id=b.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-users"></i> View Progress
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <li class="list-group-item text-center text-muted">No batches are currently assigned to you.</li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

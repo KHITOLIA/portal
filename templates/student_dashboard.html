@@ -1,0 +1,116 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    .stats-card-main {
+        background: linear-gradient(135deg, #A020F0, #5C3A9B);
+        color: #fff;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .progress-bar-container {
+        height: 25px;
+        background-color: #3a3250;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        width: {{ overall_progress_percent }}%;
+        background-color: var(--accent-color);
+        border-radius: 12px;
+        transition: width 1s ease-in-out;
+        text-align: right;
+        padding-right: 10px;
+        color: #1a1a2e;
+        font-weight: 600;
+        line-height: 25px;
+    }
+    .next-lesson-card {
+        background: #22223b;
+        border-left: 5px solid var(--highlight-color);
+        transition: transform 0.3s;
+    }
+    .next-lesson-card:hover {
+        transform: translateY(-5px);
+    }
+    .youtube-search-card {
+        background: #22223b;
+        border: 1px solid #FF4500; /* Red highlight for video */
+    }
+</style>
+<h3 class="mb-5">Student Dashboard</h3>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-12">
+        <div class="stats-card-main">
+            <h5 class="mb-3">Overall Learning Progress</h5>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" role="progressbar" aria-valuenow="{{ overall_progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                    {{ overall_progress_percent }}%
+                </div>
+            </div>
+            <p class="mb-0 text-white-50">Keep pushing! Consistency is the key to mastery.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm next-lesson-card h-100">
+            <h5 class="card-title text-success"><i class="fas fa-play-circle"></i> Continue Learning</h5>
+            {% if next_lesson %}
+                <p>Ready for the next step? Dive right back into your course.</p>
+                <div class="alert alert-info d-flex justify-content-between align-items-center p-3" style="background-color: rgba(0, 255, 255, 0.1); border-color: #00FFFF; color: #00FFFF;">
+                    <div>
+                        <strong>{{ next_lesson.recording_name }}</strong><br>
+                        <small class="text-white-50">In Batch: {{ next_lesson.batch_name }}</small>
+                    </div>
+                    <a href="{{ url_for('view_batch', batch_id=next_lesson.batch_id) }}" class="btn btn-sm btn-outline-info">Go to Video</a>
+                </div>
+            {% else %}
+                <p class="text-center text-warning">🎉 Congratulations! You have completed all available content.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm youtube-search-card h-100">
+            <h5 class="card-title" style="color: #FF4500;"><i class="fab fa-youtube"></i> Find Supplemental Resources</h5>
+            <p class="small-muted">Search directly on YouTube for tutorials or deeper explanations.</p>
+            
+            <form method="get" action="https://www.youtube.com/results" target="_blank" class="mt-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search_query" placeholder="Search Python, Flask, or MLOps..." required>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card p-4 shadow-sm">
+            <h5 class="card-title">My Enrolled Courses</h5>
+            <div class="list-group list-group-flush mt-3">
+                {% for e in enrollments %}
+                <a href="{{ url_for('view_batch', batch_id=e.batch.id) }}" class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ e.batch.name }}</strong><br>
+                        <small class="small-muted">{{ e.batch.description or 'No description provided.' }}</small>
+                    </div>
+                    {% if e.progress_count %}
+                      <span class="badge bg-info rounded-pill">Progress: {{ e.progress_count }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3 class="mb-4">Change Trainer for Batch: {{ batch.name }}</h3>
+
+<div class="card p-4">
+    <p class="small-muted mb-4">
+        Currently Assigned Trainer: <strong>{{ batch.trainer.name if batch.trainer else 'None' }}</strong>
+    </p>
+
+    <form method="post" action="{{ url_for('change_batch_trainer', batch_id=batch.id) }}">
+        <div class="mb-4">
+            <label for="trainer_id" class="form-label">Select New Trainer</label>
+            <select class="form-select" name="trainer_id" required>
+                <option value="" disabled selected>--- Choose Trainer ---</option>
+                <option value="none" style="background-color: #342d4a; color: #ff6347;">--- Unassign Current Trainer ---</option>
+                {% for t in trainers %}
+                <option value="{{ t.id }}" {% if batch.trainer_id == t.id %}selected{% endif %}>
+                    {{ t.name }} ({{ t.expertise or 'General' }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-100">Confirm Trainer Change</button>
+        <a href="{{ url_for('view_batch_enrollments', batch_id=batch.id) }}" class="btn btn-outline-info w-100 mt-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}
