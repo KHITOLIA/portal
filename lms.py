@@ -18,20 +18,22 @@ IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
 BASE_DIR = pathlib.Path(__file__).parent.resolve() 
 
 if IS_RENDER:
-    # Render's Persistent Disk Mount Path
+    # Use persistent disk directory mounted at /var/data/
     PERSISTENT_ROOT = pathlib.Path('/var/data')
     
-    # Define paths to use the persistent volume (DO NOT RUN .mkdir() HERE)
+    # CRITICAL FIX: Define ALL persistent paths using PERSISTENT_ROOT
     DB_PATH = PERSISTENT_ROOT / 'lms.db'
     UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
     PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
+    
+    # NOTE: Folder creation is handled inside initialize_database
 else:
     # Local paths for development
     DB_PATH = BASE_DIR / 'lms.db'
     UPLOAD_ROOT = BASE_DIR / 'uploads'
     PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
     
-    # Ensure local paths exist immediately for local dev sanity
+    # Ensure local paths exist for development
     UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
     PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -150,7 +152,7 @@ def initialize_database(app):
     with app.app_context():
         # CRITICAL FIX 1: Ensure folders exist on Render's mounted volume
         if IS_RENDER:
-            # We assume /var/data is mounted. We just create subfolders inside it.
+            # We assume /var/data is mounted. We create subfolders inside it.
             try:
                 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
                 PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
