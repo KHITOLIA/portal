@@ -10,41 +10,50 @@ from flask_mail import Mail, Message
 from dotenv import load_dotenv 
 
 # --- Load Environment Variables for Email Config ---
-load_dotenv()
+# load_dotenv()
 
 # ----------------- RENDER DEPLOYMENT PATH LOGIC START -----------------
 # CRITICAL: This logic defines paths based on the environment.
-IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
-BASE_DIR = pathlib.Path(__file__).parent.resolve() 
+# IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
+# BASE_DIR = pathlib.Path(__file__).parent.resolve() 
 
-if IS_RENDER:
-    # Use persistent disk directory mounted at /var/data/
-    PERSISTENT_ROOT = pathlib.Path('/var/data')
+# if IS_RENDER:
+#     # Use persistent disk directory mounted at /var/data/
+#     PERSISTENT_ROOT = pathlib.Path('/var/data')
     
-    # CRITICAL FIX: Define ALL persistent paths using PERSISTENT_ROOT
-    DB_PATH = PERSISTENT_ROOT / 'lms.db'
-    UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
-    PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
+#     # CRITICAL FIX: Define ALL persistent paths using PERSISTENT_ROOT
+#     DB_PATH = PERSISTENT_ROOT / 'lms.db'
+#     UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
+#     PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
     
-    # NOTE: Folder creation is handled inside initialize_database
-else:
-    # Local paths for development
-    DB_PATH = BASE_DIR / 'lms.db'
-    UPLOAD_ROOT = BASE_DIR / 'uploads'
-    PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
+#     # NOTE: Folder creation is handled inside initialize_database
+# else:
+#     # Local paths for development
+#     DB_PATH = BASE_DIR / 'lms.db'
+#     UPLOAD_ROOT = BASE_DIR / 'uploads'
+#     PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
     
-    # Ensure local paths exist for development
-    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
-    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+#     # Ensure local paths exist for development
+#     UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+#     PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Define other constants using the now-set paths
-TEMPLATES_DIR = BASE_DIR / 'templates'
+# TEMPLATES_DIR = BASE_DIR / 'templates'
 # ----------------- RENDER DEPLOYMENT PATH LOGIC END -----------------
 
+
+
+
+
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+UPLOAD_ROOT = BASE_DIR / 'uploads'
+TEMPLATES_DIR = BASE_DIR / 'templates'
+DB_PATH = BASE_DIR / 'lms.db'
 
 SECRET_KEY = os.environ.get('LMS_SECRET_KEY', 'dev-secret-key')
 ALLOWED_EXTENSIONS = {'mp4', 'mkv', 'webm', 'wav', 'mp3', 'ogg', 'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt', 'csv', 'json', 'py', 'ipynb', 'html', 'css', 'js'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024 * 1024  # 5 GB
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -52,6 +61,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
+mail = Mail(app)
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = os.getenv('MAIL_PORT', 587)
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
@@ -60,7 +70,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
-mail = Mail(app)
+
 db = SQLAlchemy(app)
 
 # ---------------- Models ----------------
