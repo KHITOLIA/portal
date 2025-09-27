@@ -12,11 +12,38 @@ from dotenv import load_dotenv
 # --- Load Environment Variables for Email Config ---
 load_dotenv()
 
-BASE_DIR = pathlib.Path(__file__).parent.resolve()
-UPLOAD_ROOT = BASE_DIR / 'uploads'
-PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
+# ----------------- RENDER DEPLOYMENT PATH LOGIC START -----------------
+# CRITICAL: This determines whether we are running locally or on Render.
+IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
+BASE_DIR = pathlib.Path(__file__).parent.resolve() 
+
+if IS_RENDER:
+    # Use persistent disk directory mounted at /var/data/
+    # This must match the Mount Path set on the Render dashboard.
+    PERSISTENT_ROOT = pathlib.Path('/var/data')
+    
+    # Define paths to use the persistent volume
+    DB_PATH = PERSISTENT_ROOT / 'lms.db'
+    UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
+    PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
+    
+    # Ensure necessary directories exist on the persistent volume
+    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+else:
+    # Local paths for development
+    DB_PATH = BASE_DIR / 'lms.db'
+    UPLOAD_ROOT = BASE_DIR / 'uploads'
+    PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
+    
+    # Ensure local paths exist for development
+    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Define other constants using the now-set paths
 TEMPLATES_DIR = BASE_DIR / 'templates'
-DB_PATH = BASE_DIR / 'lms.db'
+# ----------------- RENDER DEPLOYMENT PATH LOGIC END -----------------
+
 
 SECRET_KEY = os.environ.get('LMS_SECRET_KEY', 'dev-secret-key')
 ALLOWED_EXTENSIONS = {'mp4', 'mkv', 'webm', 'wav', 'mp3', 'ogg', 'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt', 'csv', 'json', 'py', 'ipynb', 'html', 'css', 'js'}
@@ -120,10 +147,32 @@ class OTP_Token(db.Model): # NEW MODEL FOR OTP
     token = db.Column(db.String(10), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     
-# ---------------- Helpers ----------------
+# ---------------- Database Initialization Function (CRITICAL FOR RENDER) ----------------
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def initialize_database(app):
+    with app.app_context():
+        # Check if the 'batch' table exists. If it doesn't, we create the entire structure.
+        inspector = db.inspect(db.engine)
+        if 'batch' not in inspector.get_table_names():
+            print("Database structure not found. Creating all tables...")
+            db.create_all() 
+            
+            # Create default admin if not exists
+            if not User.query.filter_by(email='admin@lms.com').first():
+                admin = User(name='Admin', email='admin@lms.com', role='admin')
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print('Created default admin: admin@lms.com / admin123')
+        else:
+            print("Database structure found. Continuing...")
+
+# Run the initialization function immediately after setup
+initialize_database(app)
+
+# ---------------- Helpers ----------------
 def generate_and_send_otp(user_id, email):
     # Generates a 6-char hex token and sets expiry (e.g., 10 minutes)
     token = secrets.token_hex(3).upper() 
@@ -315,7 +364,6 @@ def dashboard():
     
     elif u.role == 'trainer':
         trainer = Trainer.query.filter_by(email=u.email).first()
-        # FIX 2: Check if trainer object exists (stability fix)
         if not trainer:
             flash('Trainer profile link broken. Please contact admin.', 'danger')
             return redirect(url_for('logout'))
@@ -967,34 +1015,34 @@ def delete_trainer(trainer_id):
     flash(f"Trainer '{trainer.name}' and their corresponding user account have been deleted.", "success")
     return redirect(url_for('view_all_trainers'))
 
-# NEW ROUTE FOR EMBEDDED YOUTUBE/VIDEO SEARCH
-@app.route('/youtube_search')
-def youtube_search():
-    if not session.get('user_id'):
-        # Allow logged-out users to search but restrict content later
-        pass 
-    
-    query = request.args.get('search_query')
-    if not query:
-        flash("Please enter a search query.", 'danger')
-        return redirect(url_for('dashboard'))
-        
-    # Use Google Video Search to find relevant results (most reliable for embedding)
-    # We use a large frame to show results without leaving the LMS
-    search_url = f"https://www.google.com/search?q={query}+tutorial&tbm=vid&igu=1" 
-    # igu=1 helps ensure the page loads within the iframe on some mobile browsers
-    
-    return render_template('youtube_viewer.html', search_url=search_url, query=query)
-
-
 # ---------------- Initialize ----------------
+# This function must run to create tables when Gunicorn loads the app
+def initialize_database(app):
+    with app.app_context():
+        # Check if the 'batch' table exists. If it doesn't, we create the entire structure.
+        inspector = db.inspect(db.engine)
+        if 'batch' not in inspector.get_table_names():
+            print("Database structure not found. Creating all tables...")
+            db.create_all() 
+            
+            # Create default admin if not exists
+            if not User.query.filter_by(email='admin@lms.com').first():
+                admin = User(name='Admin', email='admin@lms.com', role='admin')
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print('Created default admin: admin@lms.com / admin123')
+        else:
+            print("Database structure found. Continuing...")
+
+# Run the initialization function immediately after setup
+initialize_database(app)
+
 if __name__ == '__main__':
     pathlib.Path('templates').mkdir(exist_ok=True)
     pathlib.Path('static').mkdir(exist_ok=True)
     pathlib.Path('uploads').mkdir(exist_ok=True)
     pathlib.Path('static/profiles').mkdir(exist_ok=True)
     
-    with app.app_context():
-        db.create_all()
-
+    # When running locally via 'python lms.py', tables are already created above.
     app.run(debug=True)
