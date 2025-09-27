@@ -13,30 +13,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ----------------- RENDER DEPLOYMENT PATH LOGIC START -----------------
-# CRITICAL: This determines whether we are running locally or on Render.
+# CRITICAL: This logic defines paths based on the environment.
 IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
 BASE_DIR = pathlib.Path(__file__).parent.resolve() 
 
 if IS_RENDER:
-    # Use persistent disk directory mounted at /var/data/
-    # This must match the Mount Path set on the Render dashboard.
+    # Render's Persistent Disk Mount Path
     PERSISTENT_ROOT = pathlib.Path('/var/data')
     
-    # Define paths to use the persistent volume
+    # Define paths to use the persistent volume (DO NOT RUN .mkdir() HERE)
     DB_PATH = PERSISTENT_ROOT / 'lms.db'
     UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
     PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
-    
-    # Ensure necessary directories exist on the persistent volume
-    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
-    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 else:
     # Local paths for development
     DB_PATH = BASE_DIR / 'lms.db'
     UPLOAD_ROOT = BASE_DIR / 'uploads'
     PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
     
-    # Ensure local paths exist for development
+    # Ensure local paths exist immediately for local dev sanity
     UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
     PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -153,7 +148,17 @@ def allowed_file(filename):
 
 def initialize_database(app):
     with app.app_context():
-        # Check if the 'batch' table exists. If it doesn't, we create the entire structure.
+        # CRITICAL FIX 1: Ensure folders exist on Render's mounted volume
+        if IS_RENDER:
+            # We assume /var/data is mounted. We just create subfolders inside it.
+            try:
+                UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+                PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                # If this fails, the disk isn't mounted correctly, but we proceed to check DB
+                print(f"Error creating folders in /var/data: {e}")
+
+        # CRITICAL FIX 2: Check if the 'batch' table exists before trying to access data.
         inspector = db.inspect(db.engine)
         if 'batch' not in inspector.get_table_names():
             print("Database structure not found. Creating all tables...")
