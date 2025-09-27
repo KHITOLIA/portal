@@ -10,50 +10,44 @@ from flask_mail import Mail, Message
 from dotenv import load_dotenv 
 
 # --- Load Environment Variables for Email Config ---
-# load_dotenv()
+load_dotenv()
 
 # ----------------- RENDER DEPLOYMENT PATH LOGIC START -----------------
-# CRITICAL: This logic defines paths based on the environment.
-# IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
-# BASE_DIR = pathlib.Path(__file__).parent.resolve() 
+IS_RENDER = os.getenv('RENDER_EXTERNAL_HOSTNAME') is not None
+BASE_DIR = pathlib.Path(__file__).parent.resolve() 
 
-# if IS_RENDER:
-#     # Use persistent disk directory mounted at /var/data/
-#     PERSISTENT_ROOT = pathlib.Path('/var/data')
+if IS_RENDER:
+    # Use persistent disk directory mounted at /var/data/
+    # PERSISTENT_ROOT = pathlib.Path('/var/data')
     
-#     # CRITICAL FIX: Define ALL persistent paths using PERSISTENT_ROOT
-#     DB_PATH = PERSISTENT_ROOT / 'lms.db'
-#     UPLOAD_ROOT = PERSISTENT_ROOT / 'uploads'
-#     PROFILE_PICS_DIR = PERSISTENT_ROOT / 'static' / 'profiles'
+    # Database path (CRITICAL: MUST USE PERSISTENT_ROOT)
+    DB_PATH = BASE_DIR / 'lms.db'
     
-#     # NOTE: Folder creation is handled inside initialize_database
-# else:
-#     # Local paths for development
-#     DB_PATH = BASE_DIR / 'lms.db'
-#     UPLOAD_ROOT = BASE_DIR / 'uploads'
-#     PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
+    # Upload paths 
+    UPLOAD_ROOT = BASE_DIR / 'uploads'
+    PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
     
-#     # Ensure local paths exist for development
-#     UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
-#     PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+    # Ensure folders exist on the persistent volume
+    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
+else:
+    # Local paths for development
+    DB_PATH = BASE_DIR / 'lms.db'
+    UPLOAD_ROOT = BASE_DIR / 'uploads'
+    PROFILE_PICS_DIR = BASE_DIR / 'static' / 'profiles'
+    
+    # Ensure local paths also exist for development
+    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Define other constants using the now-set paths
-# TEMPLATES_DIR = BASE_DIR / 'templates'
+TEMPLATES_DIR = BASE_DIR / 'templates'
 # ----------------- RENDER DEPLOYMENT PATH LOGIC END -----------------
 
-
-
-
-
-BASE_DIR = pathlib.Path(__file__).parent.resolve()
-UPLOAD_ROOT = BASE_DIR / 'uploads'
-TEMPLATES_DIR = BASE_DIR / 'templates'
-DB_PATH = BASE_DIR / 'lms.db'
 
 SECRET_KEY = os.environ.get('LMS_SECRET_KEY', 'dev-secret-key')
 ALLOWED_EXTENSIONS = {'mp4', 'mkv', 'webm', 'wav', 'mp3', 'ogg', 'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt', 'csv', 'json', 'py', 'ipynb', 'html', 'css', 'js'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024 * 1024  # 5 GB
-
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -61,7 +55,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-mail = Mail(app)
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = os.getenv('MAIL_PORT', 587)
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
@@ -70,7 +63,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
-
+mail = Mail(app)
 db = SQLAlchemy(app)
 
 # ---------------- Models ----------------
@@ -155,41 +148,26 @@ class OTP_Token(db.Model): # NEW MODEL FOR OTP
     expires_at = db.Column(db.DateTime, nullable=False)
     
 # ---------------- Database Initialization Function (CRITICAL FOR RENDER) ----------------
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 def initialize_database(app):
     with app.app_context():
-        # CRITICAL FIX 1: Ensure folders exist on Render's mounted volume
-        if IS_RENDER:
-            # We assume /var/data is mounted. We create subfolders inside it.
-            try:
-                UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
-                PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                # If this fails, the disk isn't mounted correctly, but we proceed to check DB
-                print(f"Error creating folders in /var/data: {e}")
-
-        # CRITICAL FIX 2: Check if the 'batch' table exists before trying to access data.
-        inspector = db.inspect(db.engine)
-        if 'batch' not in inspector.get_table_names():
-            print("Database structure not found. Creating all tables...")
-            db.create_all() 
-            
-            # Create default admin if not exists
-            if not User.query.filter_by(email='admin@lms.com').first():
-                admin = User(name='Admin', email='admin@lms.com', role='admin')
-                admin.set_password('admin123')
-                db.session.add(admin)
-                db.session.commit()
-                print('Created default admin: admin@lms.com / admin123')
-        else:
-            print("Database structure found. Continuing...")
+        # This creates all tables if they do not exist
+        db.create_all() 
+        
+        # Create default admin if not exists
+        if not User.query.filter_by(email='admin@lms.com').first():
+            admin = User(name='Admin', email='admin@lms.com', role='admin')
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print('Created default admin: admin@lms.com / admin123')
 
 # Run the initialization function immediately after setup
 initialize_database(app)
 
 # ---------------- Helpers ----------------
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def generate_and_send_otp(user_id, email):
     # Generates a 6-char hex token and sets expiry (e.g., 10 minutes)
     token = secrets.token_hex(3).upper() 
@@ -1036,23 +1014,16 @@ def delete_trainer(trainer_id):
 # This function must run to create tables when Gunicorn loads the app
 def initialize_database(app):
     with app.app_context():
-        # Check if the 'batch' table exists. If it doesn't, we create the entire structure.
-        inspector = db.inspect(db.engine)
-        if 'batch' not in inspector.get_table_names():
-            print("Database structure not found. Creating all tables...")
-            db.create_all() 
-            
-            # Create default admin if not exists
-            if not User.query.filter_by(email='admin@lms.com').first():
-                admin = User(name='Admin', email='admin@lms.com', role='admin')
-                admin.set_password('admin123')
-                db.session.add(admin)
-                db.session.commit()
-                print('Created default admin: admin@lms.com / admin123')
-        else:
-            print("Database structure found. Continuing...")
+        db.create_all() 
+        
+        # Create default admin if not exists (Only if you desire an automated admin creation)
+        # if not User.query.filter_by(email='admin@lms.com').first():
+        #     admin = User(name='Admin', email='admin@lms.com', role='admin')
+        #     admin.set_password('admin123')
+        #     db.session.add(admin)
+        #     db.session.commit()
+        #     print('Created default admin: admin@lms.com / admin123')
 
-# Run the initialization function immediately after setup
 initialize_database(app)
 
 if __name__ == '__main__':
